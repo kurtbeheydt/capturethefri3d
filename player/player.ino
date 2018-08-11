@@ -10,6 +10,7 @@
 #include <Fri3dBuzzer.h>
 
 const String teamTag = "R"; // choose from R|G|B
+uint16_t teamId = 2; // TODO automatically from teamtag
 uint64_t playerId;
 String playerTag;
 
@@ -18,15 +19,18 @@ Fri3dMatrix matrix = Fri3dMatrix();
 Fri3dAccelerometer accel = Fri3dAccelerometer();
 Fri3dBuzzer buzzer = Fri3dBuzzer();
 
-#define BEACON_UUID "8ec76ea3-6668-48da-9866-75be8bc86f4d"
+#define SERVICE_UUID        "111fc111-1fb5-459e-8fcc-c5c9c331914b"
+#define CHARACTERISTIC_UUID "11154111-36e1-4688-b7f5-ea07361b26a8"
+#define BEACON_UUID         "8ec76ea3-6668-48da-9866-75be8bc86f4d"
 
 BLEServer *pServer;
 BLEService *pService;
 BLECharacteristic *pCharacteristic;
 BLEAdvertising *pAdvertising;
 
-enum State { STATE_CONQUER, STATE_CONQUERING, STATE_BOMB, STATE_BOMBING, STATE_UNDERBOMBING, STATE_FIGHT, STATE_FIGHTING, STATE_DEAD };
-State state = STATE_CONQUER; // TODO: change to start as dead player
+enum State { STATE_CONQUER, STATE_CONQUERING, STATE_BOMB, STATE_BOMBING, STATE_UNDERBOMBING, 
+             STATE_FIGHT, STATE_FIGHTING, STATE_DYING, STATE_DEAD };
+State state = STATE_DYING;
 
 // fightmode vars
 long fight_startTime = 0; // millis to capture start of fightmode
@@ -41,7 +45,8 @@ const long bomb_durationTime = 10; // time in seconds
 long bomb_remainingTime;
 
 // ui
-// I know there is a button class, but this gave errors in multi_heap.c, see https://github.com/Fri3dCamp/Fri3dBadge/issues/4
+// I know there is a button class, but this gave errors in multi_heap.c, 
+// see https://github.com/Fri3dCamp/Fri3dBadge/issues/4
 #define BUTTONBOOT_PIN 0
 #define BUTTON0_PIN 36
 #define BUTTON1_PIN 39
@@ -68,8 +73,12 @@ void setup() {
   Serial.println(state);
 
   // initialise ble
-  BLEDevice::init(teamTag.c_str());
+  BLEDevice::init(playerTag.c_str());
   pServer = BLEDevice::createServer();
+  pService = pServer->createService(SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ|BLECharacteristic::PROPERTY_WRITE);
+  pCharacteristic->setValue(playerTag.c_str());
+  pService->start();  
   pAdvertising = pServer->getAdvertising();
 
   // user interactions
@@ -114,11 +123,18 @@ void loop() {
   }
   
   switch (state) {
+    case STATE_DYING:
+        startDead();
+      break;
     case STATE_DEAD:
+      // revive method
       if (Serial.available() > 0) {   
         int inByte = Serial.read();
-        state = STATE_CONQUER;
-        Serial.println("revived");
+        Serial.println(inByte, DEC);
+        if (inByte == 108) { // 'l'
+          state = STATE_CONQUER;
+          Serial.println("revived");
+        }
       }
       break;
     case STATE_FIGHT:
@@ -154,14 +170,15 @@ void loop() {
         playBombingSound();
       }
       if (bomb_remainingTime <= 0) {
-        startDead();
+        // TODO make exploding sound
+        state = STATE_DYING;
       }
       break;
     case STATE_CONQUER:
       startConquerMode();
       break;
     case STATE_CONQUERING:
-      // TODO checking for bombing
+      // TODO checking for incoming bombing
       break;
   }
  
@@ -197,7 +214,6 @@ void startConquerMode() {
     // change ble mode
     pAdvertising->stop();
     setBeacon();
-    pAdvertising->start();
     
     Serial.print("current state conquering: ");
     Serial.println(state);
@@ -213,17 +229,6 @@ void startFightMode() {
     // change ble mode
     pAdvertising->stop();
 
-    // benchmark accelerator
-    sensors_event_t event; 
-    accel.getEvent(&event);
-    fight_startAccel[0] = event.acceleration.x;
-    fight_startAccel[1] = event.acceleration.y;
-    fight_startAccel[2] = event.acceleration.z;
-
-    // init timeout
-    fight_startTime = millis();
-    fight_remainingTime = fight_maxDurationTime * 1000;
-
     // timeout for fighting
     matrix.clear();
     matrix.setPixel( 3, 0, 1 );
@@ -235,8 +240,19 @@ void startFightMode() {
     matrix.setPixel( 4, 3, 1 );
     matrix.setPixel( 3, 4, 1 );
 
-    delay(5000);
+    delay(5000); // TODO improve, make blinking stuff
     
+    // benchmark accelerator
+    sensors_event_t event; 
+    accel.getEvent(&event);
+    fight_startAccel[0] = event.acceleration.x;
+    fight_startAccel[1] = event.acceleration.y;
+    fight_startAccel[2] = event.acceleration.z;
+
+    // init timeout
+    fight_startTime = millis();
+    fight_remainingTime = fight_maxDurationTime * 1000;
+
     Serial.print("current state fighting: ");
     Serial.println(state);
     drawBasicDisplay("F");
@@ -250,9 +266,7 @@ void startBombing() {
     
     // change ble mode
     pAdvertising->stop();
-    delay(10);
     setBeacon();
-    pAdvertising->start();
 
     // init timeout
     bomb_startTime = millis();
@@ -291,6 +305,7 @@ void startDead() {
 }
 
 void playDeadSound() {
+  // TODO make better sound
   buzzer.setVolume(255);
   buzzer.setFrequency(600);
   delay(120);
@@ -312,8 +327,8 @@ void setBeacon() {
   BLEBeacon oBeacon = BLEBeacon();
   oBeacon.setManufacturerId(0x4C00); // fake Apple 0x004C LSB (ENDIAN_CHANGE_U16!)
   oBeacon.setProximityUUID(BLEUUID(BEACON_UUID));
-  oBeacon.setMajor((state & 0xFFFF0000) >> 16);
-  oBeacon.setMinor(state & 0xFFFF);
+  oBeacon.setMajor(teamId);
+  oBeacon.setMinor(state);
   BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
   BLEAdvertisementData oScanResponseData = BLEAdvertisementData();
   oAdvertisementData.setFlags(0x04); // BR_EDR_NOT_SUPPORTED 0x04
@@ -325,4 +340,5 @@ void setBeacon() {
   oAdvertisementData.addData(strServiceData);
   pAdvertising->setAdvertisementData(oAdvertisementData);
   pAdvertising->setScanResponseData(oScanResponseData);
+  pAdvertising->start();
 }
