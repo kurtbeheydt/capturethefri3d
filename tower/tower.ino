@@ -6,18 +6,81 @@
 #include <string>
 
 const String towerName = "toren01";
-uint8_t leadingTeam;
+uint8_t currentLeadingTeam;
+const uint8_t teamCount = 3;
 
 #define BEACON_UUID "8ec76ea3-6668-48da-9866-75be8bc86f4d"
 
 BLEScanResults foundDevices;
+uint8_t scanData[4][2] = {{0,0},{0,0},{0,0}};
+uint8_t winningTeamData[3] = {0,0,0};
 
-int scanTime = 10; // Seconds
+int scanTime = 5; // Seconds
+
+void resetScanData() {
+  for (int i = 1; i <= teamCount; i++) {
+    scanData[i][0] = 0;
+    scanData[i][1] = 0;
+  }
+}
+
+void calculateWinningTeam() {
+  winningTeamData[0] = 0;
+  winningTeamData[1] = 0;
+  winningTeamData[2] = 0;
+  for (int i = 1; i <= teamCount; i++) {
+    if (scanData[i][0] > winningTeamData[1]) { // more players at the token -> winner
+      winningTeamData[0] = i;
+      winningTeamData[1] = scanData[i][0];
+      winningTeamData[2] = scanData[i][1];
+    } else if (scanData[i][0] == winningTeamData[1]) { // equal number of players
+      if (scanData[i][1] < winningTeamData[2]) { // lower total rssi -> winner
+        winningTeamData[0] = i;
+        winningTeamData[1] = scanData[i][0];
+        winningTeamData[2] = scanData[i][1];       
+      }
+    }
+  }
+
+  // TODO if no players in winning team, then keep current leading team
+  currentLeadingTeam = winningTeamData[0];
+}
+
+String getManufacturerData(BLEAdvertisedDevice advertisedDevice) {
+  std::stringstream ss;
+  char *pHex = BLEUtils::buildHexData(nullptr, 
+                                      (uint8_t*)advertisedDevice.getManufacturerData().data(), 
+                                      advertisedDevice.getManufacturerData().length());
+  ss << pHex;
+  free(pHex);
+  std::string data = ss.str();
+  return data.c_str();
+}
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
-    void onResult(BLEAdvertisedDevice advertisedDevice) {
-      Serial.printf("Advertised Device: %s \n", advertisedDevice.toString().c_str());
+  void onResult(BLEAdvertisedDevice advertisedDevice) {
+    // 4c0002154d6fc88bbe756698da486866a36ec78e0001000300 team 1 bombing
+    // 4c0002154d6fc88bbe756698da486866a36ec78e0001000100 team 1 conquering
+    // 4c0002154d6fc88bbe756698da486866a36ec78e0002000300 team 2 bombing
+    // 4c0002154d6fc88bbe756698da486866a36ec78e0002000100 team 2 conquering
+    String bleManufacturerData = getManufacturerData(advertisedDevice);
+    if (bleManufacturerData.substring(0, 40) == "4c0002154d6fc88bbe756698da486866a36ec78e") { // iBeacon prefix
+      int teamId = bleManufacturerData.substring(43, 44).toInt(); // get major
+      int state = bleManufacturerData.substring(47, 48).toInt(); // get minor
+      int bleRssi = advertisedDevice.getRSSI() * -1; // the lower, the better
+      Serial.print("Found a badge for team ");
+      Serial.print(teamId, DEC);
+      Serial.print(" and state ");
+      Serial.print(state, DEC);
+      Serial.print(" and rssi ");
+      Serial.println(bleRssi, DEC);
+
+      if (state == 1) { // only players in conquer mode
+        scanData[teamId][0] = scanData[teamId][0] + 1; // add a teammember
+        scanData[teamId][1] = scanData[teamId][1] + bleRssi; // add to total rssi
+      }
     }
+  }
 };
 
 void setup() {
@@ -31,43 +94,41 @@ void setup() {
 
 void loop() {
   Serial.println("===== Scanning... =====");
+  // TODO flash lights while scanning
+  
+  resetScanData();
   BLEScan* pBLEScan = BLEDevice::getScan(); //create new scan
   pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
   pBLEScan->setActiveScan(true); //active scan uses more power, but get results faster
   foundDevices = pBLEScan->start(scanTime);
-  
-  Serial.println("===== Number of badges: ===== ");
-  int counter=0;
-  for (int i=0; i<foundDevices.getCount(); i++) {
-    int bleRssi = foundDevices.getDevice(i).getRSSI();
-    Serial.print("Device rssi: ");
-    Serial.println(bleRssi);
-    /*
-    uint8_t *payload = foundDevices.getDevice(i).getPayload();
-    Serial.print("Device payload: ");
-    Serial.println(String((uint32_t)payload));
-    */ 
-    // get manufacturerData
-    String bleManufacturerData = getManufacturerData(i);
-    Serial.print("Device manufacturerdata: ");
-    Serial.println(bleManufacturerData);
 
-// 4c0002154d6fc88bbe756698da486866a36ec78e0001000300 team 1 bombing
-// 4c0002154d6fc88bbe756698da486866a36ec78e0001000100 team 1 conquering
-// 4c0002154d6fc88bbe756698da486866a36ec78e0002000300 team 2 bombing
-// 4c0002154d6fc88bbe756698da486866a36ec78e0002000100 team 2 conquering
-     
+  Serial.println("===== Scan Summary... =====");
+  for (int i = 1; i <= teamCount; i++) {
+    Serial.print("Team ");
+    Serial.print(i, DEC);
+    Serial.print(" has ");
+    Serial.print(scanData[i][0], DEC);
+    Serial.print(" player(s), with a total rssi of ");
+    Serial.println(scanData[i][1], DEC);
   }
-  Serial.println(counter);
-}
+  
+  Serial.println("===== Winning team... =====");
+  calculateWinningTeam();
+  Serial.print("Winning team: ");
+  Serial.print(winningTeamData[0], DEC);
+  Serial.print(" with ");
+  Serial.print(winningTeamData[1], DEC);
+  Serial.print(" player(s) and a total rssi of ");
+  Serial.println(winningTeamData[2], DEC);
+
+  // TODO set rgb in color of leading team
+    
+  Serial.println("===== Sending data to central server... =====");
+
+  // TODO send data to backend
 
 
-String getManufacturerData(int deviceId) {
-  std::stringstream ss;
-  char *pHex = BLEUtils::buildHexData(nullptr, (uint8_t*)foundDevices.getDevice(deviceId).getManufacturerData().data(), foundDevices.getDevice(deviceId).getManufacturerData().length());
-  ss << pHex;
-  free(pHex);
-  std::string data = ss.str();
-  return data.c_str();
+  
+  delay(5000); // TODO increase delay after testing
 }
 
