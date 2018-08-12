@@ -10,7 +10,7 @@
 #include <Fri3dBuzzer.h>
 
 const String teamTag = "R"; // choose from R|G|B
-uint16_t teamId = 2; // TODO automatically from teamtag
+uint16_t teamId;
 uint64_t playerId;
 String playerTag;
 
@@ -30,7 +30,7 @@ BLEAdvertising *pAdvertising;
 
 enum State { STATE_CONQUER, STATE_CONQUERING, STATE_BOMB, STATE_BOMBING, STATE_UNDERBOMBING, 
              STATE_FIGHT, STATE_FIGHTING, STATE_DYING, STATE_DEAD };
-State state = STATE_DYING;
+State state = STATE_CONQUER;
 
 // fightmode vars
 long fight_startTime = 0; // millis to capture start of fightmode
@@ -59,6 +59,7 @@ void setup() {
   Serial.begin(9600);
 
   // player details
+  setTeamId();
   Serial.println("===== starting player... =====");
   Serial.print("Player team: ");
   Serial.println(teamTag);
@@ -76,7 +77,9 @@ void setup() {
   BLEDevice::init(playerTag.c_str());
   pServer = BLEDevice::createServer();
   pService = pServer->createService(SERVICE_UUID);
-  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ|BLECharacteristic::PROPERTY_WRITE);
+  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, 
+                                                   BLECharacteristic::PROPERTY_READ
+                                                   |BLECharacteristic::PROPERTY_WRITE);
   pCharacteristic->setValue(playerTag.c_str());
   pService->start();  
   pAdvertising = pServer->getAdvertising();
@@ -87,32 +90,6 @@ void setup() {
 
   // started
   playDeadSound();
-}
-
-bool checkButtonReleased(int button) {
-  int currentValue = digitalRead(buttons[button]);
-  if (currentValue == LOW) {
-    /*
-    Serial.print("Button ");
-    Serial.print(button);
-    Serial.print(" on pin  ");
-    Serial.print(buttons[button]);
-    Serial.println(" pressed.");
-    */
-    buttonPressed[button] = 1;
-  }
-  if ((currentValue == HIGH) && (buttonPressed[button] == 1)) {
-    /*
-    Serial.print("Button ");
-    Serial.print(button);
-    Serial.print(" on pin  ");
-    Serial.print(buttons[button]);
-    Serial.println(" released.");
-    */
-    buttonPressed[button] = 0;
-    return true;
-  }
-  return false;
 }
 
 void loop() {
@@ -183,6 +160,42 @@ void loop() {
   }
  
   delay(10);
+}
+
+void setTeamId() {
+  if (teamTag == "R") {
+    teamId = 1;
+  } else if (teamTag == "G") {
+    teamId = 2;
+  } else if (teamTag == "B") {
+    teamId = 3;
+  }
+}
+
+bool checkButtonReleased(int button) {
+  int currentValue = digitalRead(buttons[button]);
+  if (currentValue == LOW) {
+    /*
+    Serial.print("Button ");
+    Serial.print(button);
+    Serial.print(" on pin  ");
+    Serial.print(buttons[button]);
+    Serial.println(" pressed.");
+    */
+    buttonPressed[button] = 1;
+  }
+  if ((currentValue == HIGH) && (buttonPressed[button] == 1)) {
+    /*
+    Serial.print("Button ");
+    Serial.print(button);
+    Serial.print(" on pin  ");
+    Serial.print(buttons[button]);
+    Serial.println(" released.");
+    */
+    buttonPressed[button] = 0;
+    return true;
+  }
+  return false;
 }
 
 void drawBasicDisplay(String gameMode = "C") {
