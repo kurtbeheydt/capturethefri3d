@@ -1,9 +1,10 @@
 #include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEScan.h>
-#include <BLEAdvertisedDevice.h>
 #include <sstream>
 #include <string>
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+#include "config.h" // wifi and backend settings
 
 const String towerName = "toren01";
 uint8_t currentLeadingTeam;
@@ -43,7 +44,9 @@ void calculateWinningTeam() {
   }
 
   // TODO if no players in winning team, then keep current leading team
-  currentLeadingTeam = winningTeamData[0];
+  if (winningTeamData[0] > 0) {
+    currentLeadingTeam = winningTeamData[0];
+  }
 }
 
 String getManufacturerData(BLEAdvertisedDevice advertisedDevice) {
@@ -55,6 +58,32 @@ String getManufacturerData(BLEAdvertisedDevice advertisedDevice) {
   free(pHex);
   std::string data = ss.str();
   return data.c_str();
+}
+
+void postScore() {
+  // encoding json
+  //StaticJsonBuffer<300> JSONbuffer;
+
+  // sending
+  //if (WiFi.status() == WL_CONNECTED) {
+    /*HTTPClient http;   
+    
+    http.begin(backendUrl);
+    http.addHeader("Content-Type", "text/plain");
+    
+    int httpResponseCode = http.POST("POSTING from ESP32");
+    
+    if (httpResponseCode > 0) {
+      String response = http.getString();                       
+      Serial.println(httpResponseCode);  
+      Serial.println(response);         
+    } else {
+      Serial.print("Error on sending POST: ");
+      Serial.println(httpResponseCode);
+    }
+    http.end();  //Free resources 
+    */
+ // }
 }
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
@@ -85,10 +114,24 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("===== starting tower... =====");
+  Serial.println("===== Starting tower... =====");
   Serial.print("Tower name: ");
   Serial.println(towerName);
 
+  // connecting to wifi
+  Serial.println("===== Connecting to wifi... =====");
+  WiFi.begin(ssid, password);
+  Serial.print("Establishing connection to WiFi...");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(1000);
+  } 
+  Serial.println(" Connected to network");
+  Serial.println(WiFi.localIP());
+  Serial.println(WiFi.macAddress());
+
+  // starting ble
+  Serial.println("===== Starting ble... =====");
   BLEDevice::init(towerName.c_str());
 }
 
@@ -126,7 +169,9 @@ void loop() {
   Serial.println("===== Sending data to central server... =====");
 
   // TODO send data to backend
-
+  /*
+   Serialise currentLeadingTeam, winningTeamData and scanData
+   */
 
   
   delay(5000); // TODO increase delay after testing
