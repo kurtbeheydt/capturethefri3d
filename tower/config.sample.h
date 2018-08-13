@@ -9,3 +9,4 @@
 const char* ssid = "";
 const char* password = "";
 const String backendUrl = "";
+const String secret = ""; // trying to outsmart cheaters ...

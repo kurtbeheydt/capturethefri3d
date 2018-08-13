@@ -1,10 +1,17 @@
 <?php
+require('secret.php');
+
 $filename = 'data.json';
 
 $data = (isset($_GET['data'])) ? json_decode($_GET['data']) : false;
 
 if (!$data) {
     die('no data');
+}
+
+// trying to outsmart cheaters ...
+if ($data->secret != $secret) {
+    die('not allowed');
 }
 
 //print_r($data);

@@ -74,7 +74,8 @@ void postScore() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;   
 
-    String gameData = "{\"name\": \"" + towerName + "\"," +  
+    String gameData = "{\"secret\": \"" + secret + "\"," +
+                        "\"name\": \"" + towerName + "\"," +  
                         "\"currentLeadingTeam\": \"" + getTeamId(currentLeadingTeam) + "\"," + 
                         "\"teamData\": {" + 
                           "\"team1\": {" +
