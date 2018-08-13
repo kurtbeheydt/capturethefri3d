@@ -67,10 +67,10 @@ String getTeamId(uint8_t teamid) {
   } else if (teamid == 3) {
     return "blauw";
   }
+  return "niemand";
 }
 
 void postScore() {
-  // sending
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;   
 
@@ -126,7 +126,6 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       Serial.print(state, DEC);
       Serial.print(" and rssi ");
       Serial.println(bleRssi, DEC);
-
       if (state == 1) { // only players in conquer mode
         scanData[teamId][0] = scanData[teamId][0] + 1; // add a teammember
         scanData[teamId][1] = scanData[teamId][1] + bleRssi; // add to total rssi
@@ -193,11 +192,6 @@ void loop() {
 
   // send data to backend
   postScore();
-  
-  /*
-   Serialise currentLeadingTeam, winningTeamData and scanData
-   */
-
   
   delay(5000); // TODO increase delay after testing
 }

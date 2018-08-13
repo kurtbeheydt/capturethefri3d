@@ -16,7 +16,10 @@ fclose($handle);
 $handle = fopen($filename, 'w') or die('Cannot open file: ' . $filename);
 
 $currentdata->towers->{$data->name} = $data;
-$currentdata->scores->{$data->currentLeadingTeam}++;
+
+if ($data->currentLeadingTeam != 'niemand') {
+    $currentdata->scores->{$data->currentLeadingTeam}++;
+}
 
 fwrite($handle, json_encode($currentdata));
 fclose($handle);
