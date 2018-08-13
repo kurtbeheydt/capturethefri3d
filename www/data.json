@@ -1,0 +1,27 @@
+{
+    "towers": {
+        "toren01": {
+            "name": "toren01",
+            "currentLeadingTeam": "niemand",
+            "teamData": {
+                "team1": {
+                    "teamId": "rood",
+                    "teamCount": 0
+                },
+                "team2": {
+                    "teamId": "groen",
+                    "teamCount": 0
+                },
+                "team3": {
+                    "teamId": "blauw",
+                    "teamCount": 0
+                }
+            }
+        }
+    },
+    "scores": {
+        "rood": 0,
+        "groen": 0,
+        "blauw": 0
+    }
+}

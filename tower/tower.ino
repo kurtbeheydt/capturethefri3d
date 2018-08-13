@@ -43,7 +43,6 @@ void calculateWinningTeam() {
     }
   }
 
-  // TODO if no players in winning team, then keep current leading team
   if (winningTeamData[0] > 0) {
     currentLeadingTeam = winningTeamData[0];
   }
@@ -60,18 +59,43 @@ String getManufacturerData(BLEAdvertisedDevice advertisedDevice) {
   return data.c_str();
 }
 
-void postScore() {
-  // encoding json
-  //StaticJsonBuffer<300> JSONbuffer;
+String getTeamId(uint8_t teamid) {
+  if (teamid == 1) {
+    return "rood";
+  } else if (teamid == 2) {
+    return "groen";
+  } else if (teamid == 3) {
+    return "blauw";
+  }
+}
 
+void postScore() {
   // sending
-  //if (WiFi.status() == WL_CONNECTED) {
-    /*HTTPClient http;   
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;   
+
+    String gameData = "{\"name\": \"" + towerName + "\"," +  
+                        "\"currentLeadingTeam\": \"" + getTeamId(currentLeadingTeam) + "\"," + 
+                        "\"teamData\": {" + 
+                          "\"team1\": {" +
+                            "\"teamId\": \"rood\"," + 
+                            "\"teamCount\": " + String((uint16_t)scanData[1][0]) +  
+                          "}," +
+                          "\"team2\": {" +
+                            "\"teamId\": \"groen\"," + 
+                            "\"teamCount\": " + String((uint16_t)scanData[2][0]) +  
+                          "}," +
+                          "\"team3\": {" +
+                            "\"teamId\": \"blauw\"," + 
+                            "\"teamCount\": " + String((uint16_t)scanData[3][0]) +  
+                          "}" +
+                        "}" +
+                      "}";
     
-    http.begin(backendUrl);
+    http.begin(backendUrl + "?data=" + gameData);
     http.addHeader("Content-Type", "text/plain");
     
-    int httpResponseCode = http.POST("POSTING from ESP32");
+    int httpResponseCode = http.GET(); // POST request didn't want to work
     
     if (httpResponseCode > 0) {
       String response = http.getString();                       
@@ -81,9 +105,8 @@ void postScore() {
       Serial.print("Error on sending POST: ");
       Serial.println(httpResponseCode);
     }
-    http.end();  //Free resources 
-    */
- // }
+    http.end();
+  }
 }
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
@@ -168,7 +191,9 @@ void loop() {
     
   Serial.println("===== Sending data to central server... =====");
 
-  // TODO send data to backend
+  // send data to backend
+  postScore();
+  
   /*
    Serialise currentLeadingTeam, winningTeamData and scanData
    */
