@@ -3,9 +3,9 @@
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 #include <BLEBeacon.h>
-
+#include <sstream>
+#include <string>
 #include <Fri3dMatrix.h>
-//#include <Fri3dButtons.h>
 #include <Fri3dAccelerometer.h>
 #include <Fri3dBuzzer.h>
 
@@ -15,7 +15,6 @@ uint64_t playerId;
 String playerTag;
 
 Fri3dMatrix matrix = Fri3dMatrix();
-//Fri3dButtons buttons = Fri3dButtons();
 Fri3dAccelerometer accel = Fri3dAccelerometer();
 Fri3dBuzzer buzzer = Fri3dBuzzer();
 
@@ -29,7 +28,7 @@ BLECharacteristic *pCharacteristic;
 BLEAdvertising *pAdvertising;
 
 enum State { STATE_CONQUER, STATE_CONQUERING, STATE_BOMB, STATE_BOMBING, STATE_UNDERBOMBING, 
-             STATE_FIGHT, STATE_FIGHTING, STATE_DYING, STATE_DEAD };
+             STATE_EXPLODING, STATE_FIGHT, STATE_FIGHTING, STATE_DYING, STATE_DEAD };
 State state = STATE_CONQUER;
 
 // fightmode vars
@@ -41,19 +40,56 @@ float fight_maxDeviation = 2.00;
 
 // bombingmode vars
 long bomb_startTime = 0; // millis to capture start of bombmode
-const long bomb_durationTime = 5; // time in seconds TODO make larger
+// TODO make bomb_durationTime longer
+const uint8_t bomb_durationTime = 5; // count-down time
+const uint8_t bomb_explodingTime = 5; // time of explosion and sending exploding beacon
 long bomb_remainingTime;
+
+// conquerer vars
+long conq_lastScanTime = 0; // millis to capture start of conquerermode
+const uint8_t conq_scanBombersDuration = 2;
+const uint8_t conq_scanBombersIntervalTime = 1;
 
 // ui
 // I know there is a button class, but this gave errors in multi_heap.c, 
 // see https://github.com/Fri3dCamp/Fri3dBadge/issues/4
-#define BUTTONBOOT_PIN 0
 #define BUTTON0_PIN 36
 #define BUTTON1_PIN 39
-#define TOUCH0_PIN 12
-#define TOUCH1_PIN 14
 int buttons[2] = {BUTTON0_PIN, BUTTON1_PIN};
 int buttonPressed[2] = {0, 0};
+
+String getManufacturerData(BLEAdvertisedDevice advertisedDevice) {
+  std::stringstream ss;
+  char *pHex = BLEUtils::buildHexData(nullptr, 
+                                      (uint8_t*)advertisedDevice.getManufacturerData().data(), 
+                                      advertisedDevice.getManufacturerData().length());
+  ss << pHex;
+  free(pHex);
+  std::string data = ss.str();
+  return data.c_str();
+}
+
+class bombingCallbacks: public BLEAdvertisedDeviceCallbacks {
+  void onResult(BLEAdvertisedDevice advertisedDevice) {
+    String bleManufacturerData = getManufacturerData(advertisedDevice);
+    if (bleManufacturerData.substring(0, 40) == "4c0002154d6fc88bbe756698da486866a36ec78e") { // iBeacon prefix
+      int badgeTeamId = bleManufacturerData.substring(43, 44).toInt(); // get major
+      int badgeState = bleManufacturerData.substring(47, 48).toInt(); // get minor
+      int badgeStateBleRssi = advertisedDevice.getRSSI() * -1; // the lower, the better
+      Serial.print("Found a badge for team ");
+      Serial.print(badgeTeamId, DEC);
+      Serial.print(" and state ");
+      Serial.print(badgeState, DEC);
+      Serial.print(" and rssi ");
+      Serial.println(badgeStateBleRssi, DEC); 
+      if (badgeState == STATE_BOMBING) { // in bombing mode
+        state = STATE_UNDERBOMBING;
+      } else if (badgeState == STATE_EXPLODING) { // in exploding mode
+        state = STATE_EXPLODING;
+      }
+    }
+  }
+};
 
 void setup() {
   Serial.begin(9600);
@@ -88,9 +124,6 @@ void setup() {
   // user interactions
   pinMode( BUTTON0_PIN, INPUT_PULLUP );
   pinMode( BUTTON1_PIN, INPUT_PULLUP );
-
-  // started
-  playDeadSound();
 }
 
 void loop() {
@@ -149,16 +182,24 @@ void loop() {
         playBombingSound();
       }
       if (bomb_remainingTime <= 1) {
-        playExplodingSound();
-        // TODO send last beaconsignal
-        state = STATE_DYING;
+        startExploding();
       }
       break;
     case STATE_CONQUER:
       startConquerMode();
       break;
     case STATE_CONQUERING:
-      // TODO checking for incoming bombing
+      if (millis() > (conq_lastScanTime + (conq_scanBombersIntervalTime * 1000))) {
+        scanForBombers();
+      }
+      break;
+    case STATE_UNDERBOMBING:
+      startUnderbombing();
+      scanForBombers();
+      break;
+    case STATE_EXPLODING:
+      playAndShowExploding();
+      state = STATE_DYING;
       break;
   }
  
@@ -207,7 +248,18 @@ void drawFightingDisplay(long fight_remainingTime) {
   
 }
 
+void scanForBombers() {
+  // init default, which won't change if no bombers are found
+  state = STATE_CONQUER;
+  Serial.println("===== Scanning for bombers... =====");
+  BLEScan* pBLEScan = BLEDevice::getScan(); //create new scan
+  pBLEScan->setAdvertisedDeviceCallbacks(new bombingCallbacks());
+  pBLEScan->setActiveScan(true);
+  BLEScanResults foundDevices = pBLEScan->start(conq_scanBombersDuration);
+}
+
 void startConquerMode() {
+  
   if ((state != STATE_DEAD) && (state != STATE_FIGHTING)) {
     Serial.println("starting conquering ...");
     state = STATE_CONQUERING;
@@ -215,6 +267,8 @@ void startConquerMode() {
     // change ble mode
     pAdvertising->stop();
     setBeacon();
+
+    buzzer.setVolume(0);
     
     drawBasicDisplay("C");
   }
@@ -227,6 +281,8 @@ void startFightMode() {
 
     // change ble mode
     pAdvertising->stop();
+
+    buzzer.setVolume(0);
 
     // timeout for fighting
     matrix.clear();
@@ -270,6 +326,42 @@ void startBombing() {
     bomb_remainingTime = bomb_durationTime * 1000;
 
     drawBasicDisplay("B");
+  }
+}
+
+void startUnderbombing() {
+  if ((state != STATE_DEAD) && (state != STATE_FIGHTING)) {
+    Serial.println("starting under bombing ...");
+    state = STATE_UNDERBOMBING; 
+    
+    // change ble mode
+    pAdvertising->stop();
+
+    buzzer.setVolume(255);
+    buzzer.setFrequency(800);
+  
+    drawBasicDisplay("B");
+  }
+}
+
+void stopSound() {
+  buzzer.setVolume(0);
+}
+
+void startExploding() {
+  if (state == STATE_BOMBING) {
+    Serial.println("starting exploding ...");
+    state = STATE_EXPLODING; 
+    
+    // change ble mode
+    pAdvertising->stop();
+    setBeacon();
+
+    playAndShowExploding();
+ 
+    delay((bomb_explodingTime - 1) * 1000); // keep sending the exploding signal to 
+                                            // other badges who are under bombing
+    state = STATE_DYING;
   }
 }
 
@@ -319,9 +411,42 @@ void playAliveSound() {
 }
 
 
-void playExplodingSound() {
+void playAndShowExploding() {
+  buzzer.setVolume(0);
+  // TODO improve this sequence
+  matrix.clear();
+  matrix.setPixel( 3, 2, 1 );
+  matrix.setPixel( 10, 2, 1 );
+  delay(350);
+  matrix.clear();
+  matrix.setPixel( 3, 1, 1 );
+  matrix.setPixel( 2, 2, 1 );
+  matrix.setPixel( 4, 2, 1 );
+  matrix.setPixel( 3, 3, 1 );
+  matrix.setPixel( 10, 1, 1 );
+  matrix.setPixel( 9, 2, 1 );
+  matrix.setPixel( 11, 2, 1 );
+  matrix.setPixel( 10, 3, 1 );
+  delay(350);
+  matrix.clear();
+  matrix.setPixel( 3, 0, 1 );
+  matrix.setPixel( 2, 1, 1 );
+  matrix.setPixel( 4, 1, 1 );
+  matrix.setPixel( 1, 2, 1 );
+  matrix.setPixel( 5, 2, 1 );
+  matrix.setPixel( 2, 3, 1 );
+  matrix.setPixel( 4, 3, 1 );
+  matrix.setPixel( 3, 4, 1 );
+  matrix.setPixel( 10, 0, 1 );
+  matrix.setPixel( 9, 1, 1 );
+  matrix.setPixel( 11, 1, 1 );
+  matrix.setPixel( 8, 2, 1 );
+  matrix.setPixel( 12, 2, 1 );
+  matrix.setPixel( 9, 3, 1 );
+  matrix.setPixel( 11, 3, 1 );
+  matrix.setPixel( 10, 4, 1 );
+
   uint8_t soundDelay = 45;
-  delay(400);
   buzzer.setVolume(255);
   for (uint8_t i = 0; i < 2; i++) {
     buzzer.setFrequency(550); 
