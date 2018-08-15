@@ -17,11 +17,83 @@
                     "teamCount": 0
                 }
             }
+        },
+        "toren02": {
+            "name": "toren02",
+            "currentLeadingTeam": "rood",
+            "teamData": {
+                "team1": {
+                    "teamId": "rood",
+                    "teamCount": 1
+                },
+                "team2": {
+                    "teamId": "groen",
+                    "teamCount": 0
+                },
+                "team3": {
+                    "teamId": "blauw",
+                    "teamCount": 0
+                }
+            }
+        },
+        "toren03": {
+            "name": "toren03",
+            "currentLeadingTeam": "groen",
+            "teamData": {
+                "team1": {
+                    "teamId": "rood",
+                    "teamCount": 0
+                },
+                "team2": {
+                    "teamId": "groen",
+                    "teamCount": 1
+                },
+                "team3": {
+                    "teamId": "blauw",
+                    "teamCount": 0
+                }
+            }
+        },
+        "toren04": {
+            "name": "toren04",
+            "currentLeadingTeam": "groen",
+            "teamData": {
+                "team1": {
+                    "teamId": "rood",
+                    "teamCount": 0
+                },
+                "team2": {
+                    "teamId": "groen",
+                    "teamCount": 1
+                },
+                "team3": {
+                    "teamId": "blauw",
+                    "teamCount": 0
+                }
+            }
+        },
+        "toren05": {
+            "name": "toren05",
+            "currentLeadingTeam": "blauw",
+            "teamData": {
+                "team1": {
+                    "teamId": "rood",
+                    "teamCount": 0
+                },
+                "team2": {
+                    "teamId": "groen",
+                    "teamCount": 1
+                },
+                "team3": {
+                    "teamId": "blauw",
+                    "teamCount": 1
+                }
+            }
         }
     },
     "scores": {
-        "rood": 0,
-        "groen": 0,
-        "blauw": 0
+        "rood": 102,
+        "groen": 32,
+        "blauw": 30
     }
 }
