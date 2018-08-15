@@ -77,6 +77,6 @@ basic php-script for front-end and back-end.
 - Upload all files to a php-enabled webserver.
 - Make sure data.json is writable (chmod 777).
 
-## dummy player
+## dummy players
 
-Just for testing purposes, a lightweight variant to create dummy conquerers for ESP-WROOM-32 dev boards.
+Just for testing purposes, ightweight variants to create dummy conquerers/bombers for ESP-WROOM-32 dev boards.
