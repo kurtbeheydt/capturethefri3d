@@ -3,8 +3,13 @@
 #include <string>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <Fri3dMatrix.h>
+#include <Fri3dBuzzer.h>
 
 #include "config.h" // wifi and backend settings
+
+Fri3dMatrix matrix = Fri3dMatrix();
+Fri3dBuzzer buzzer = Fri3dBuzzer();
 
 const String towerName = "toren01";
 uint8_t currentLeadingTeam;
@@ -70,6 +75,17 @@ String getTeamId(uint8_t teamid) {
   return "niemand";
 }
 
+String getTeamTag(uint8_t teamid) {
+  if (teamid == 1) {
+    return "R";
+  } else if (teamid == 2) {
+    return "G";
+  } else if (teamid == 3) {
+    return "B";
+  }
+  return " ";
+}
+
 void postScore() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;   
@@ -108,6 +124,12 @@ void postScore() {
     }
     http.end();
   }
+}
+
+void drawBasicDisplay(String text = "S") {
+  matrix.clear();
+  matrix.drawString(2, text);
+  matrix.drawString(9, text);
 }
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
@@ -160,7 +182,11 @@ void setup() {
 
 void loop() {
   Serial.println("===== Scanning... =====");
-  // TODO flash lights while scanning
+  // display scanning modus
+  drawBasicDisplay("S");
+  // start making noise
+  buzzer.setVolume(255);
+  buzzer.setFrequency(500);
   
   resetScanData();
   BLEScan* pBLEScan = BLEDevice::getScan(); //create new scan
@@ -187,7 +213,10 @@ void loop() {
   Serial.print(" player(s) and a total rssi of ");
   Serial.println(winningTeamData[2], DEC);
 
-  // TODO set rgb in color of leading team
+  // stop making noise
+  buzzer.setVolume(0);
+  // display current leading team
+  drawBasicDisplay(getTeamTag(currentLeadingTeam));
     
   Serial.println("===== Sending data to central server... =====");
 
