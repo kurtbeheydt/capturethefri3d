@@ -33,7 +33,7 @@ State state = STATE_CONQUER;
 
 // fightmode vars
 long fight_startTime = 0; // millis to capture start of fightmode
-const long fight_maxDurationTime = 5; // time in seconds
+const long fight_maxDurationTime = 15; // time in seconds
 long fight_remainingTime;
 float fight_startAccel[3];
 float fight_maxDeviation = 2.00;
@@ -41,7 +41,7 @@ float fight_maxDeviation = 2.00;
 // bombingmode vars
 long bomb_startTime = 0; // millis to capture start of bombmode
 // TODO make bomb_durationTime longer
-const uint8_t bomb_durationTime = 5; // count-down time
+const uint8_t bomb_durationTime = 10; // count-down time
 const uint8_t bomb_explodingTime = 5; // time of explosion and sending exploding beacon
 long bomb_remainingTime;
 
@@ -414,37 +414,6 @@ void playAliveSound() {
 void playAndShowExploding() {
   buzzer.setVolume(0);
   // TODO improve this sequence
-  matrix.clear();
-  matrix.setPixel( 3, 2, 1 );
-  matrix.setPixel( 10, 2, 1 );
-  delay(350);
-  matrix.clear();
-  matrix.setPixel( 3, 1, 1 );
-  matrix.setPixel( 2, 2, 1 );
-  matrix.setPixel( 4, 2, 1 );
-  matrix.setPixel( 3, 3, 1 );
-  matrix.setPixel( 10, 1, 1 );
-  matrix.setPixel( 9, 2, 1 );
-  matrix.setPixel( 11, 2, 1 );
-  matrix.setPixel( 10, 3, 1 );
-  delay(350);
-  matrix.clear();
-  matrix.setPixel( 3, 0, 1 );
-  matrix.setPixel( 2, 1, 1 );
-  matrix.setPixel( 4, 1, 1 );
-  matrix.setPixel( 1, 2, 1 );
-  matrix.setPixel( 5, 2, 1 );
-  matrix.setPixel( 2, 3, 1 );
-  matrix.setPixel( 4, 3, 1 );
-  matrix.setPixel( 3, 4, 1 );
-  matrix.setPixel( 10, 0, 1 );
-  matrix.setPixel( 9, 1, 1 );
-  matrix.setPixel( 11, 1, 1 );
-  matrix.setPixel( 8, 2, 1 );
-  matrix.setPixel( 12, 2, 1 );
-  matrix.setPixel( 9, 3, 1 );
-  matrix.setPixel( 11, 3, 1 );
-  matrix.setPixel( 10, 4, 1 );
 
   uint8_t soundDelay = 45;
   buzzer.setVolume(255);
@@ -487,6 +456,38 @@ void playAndShowExploding() {
     delay(soundDelay);
   }
   buzzer.setVolume(0);
+
+  matrix.clear();
+  matrix.setPixel( 3, 2, 1 );
+  matrix.setPixel( 10, 2, 1 );
+  delay(350);
+  matrix.clear();
+  matrix.setPixel( 3, 1, 1 );
+  matrix.setPixel( 2, 2, 1 );
+  matrix.setPixel( 4, 2, 1 );
+  matrix.setPixel( 3, 3, 1 );
+  matrix.setPixel( 10, 1, 1 );
+  matrix.setPixel( 9, 2, 1 );
+  matrix.setPixel( 11, 2, 1 );
+  matrix.setPixel( 10, 3, 1 );
+  delay(350);
+  matrix.clear();
+  matrix.setPixel( 3, 0, 1 );
+  matrix.setPixel( 2, 1, 1 );
+  matrix.setPixel( 4, 1, 1 );
+  matrix.setPixel( 1, 2, 1 );
+  matrix.setPixel( 5, 2, 1 );
+  matrix.setPixel( 2, 3, 1 );
+  matrix.setPixel( 4, 3, 1 );
+  matrix.setPixel( 3, 4, 1 );
+  matrix.setPixel( 10, 0, 1 );
+  matrix.setPixel( 9, 1, 1 );
+  matrix.setPixel( 11, 1, 1 );
+  matrix.setPixel( 8, 2, 1 );
+  matrix.setPixel( 12, 2, 1 );
+  matrix.setPixel( 9, 3, 1 );
+  matrix.setPixel( 11, 3, 1 );
+  matrix.setPixel( 10, 4, 1 );
 }
 
 void playBombingSound() {
