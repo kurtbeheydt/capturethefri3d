@@ -17,7 +17,13 @@ As a team you have to conquer as many towers for as long as possible. Every towe
 - By default, a player starts dead when the switch their badge on. You can give them a live by writing an 'l' via the serial port (9600 baud). _Perhaps this will change to another procedure_
 - When a player is revived, he or she starts in conquer mode. This means he or she can search for towers and when he is in bluetooth range while the tower is scanning, his badge is counted.
 
-_more to come_
+### fight mode
+
+A player can challenge another player for a stand-off. If he can tag the other player, both players push button 0, keeping it pushed and release it at the same time. A countdown starts during which they can't move. If they do, the dying sound plays. The first playing having his badge play the dying sound, looses and has to switch his badge off.
+
+### bombing mode
+
+A player can start a bombing count-down by pressing button 1. This starts a countdown sequence in which all other players in bluetooth reach are warned that a bomb will explode. When the other players don't move quickly enough away from the bomber, they also die on explosion of the bomb.
 
 ## player badges
 
