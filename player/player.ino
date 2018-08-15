@@ -41,7 +41,7 @@ float fight_maxDeviation = 2.00;
 
 // bombingmode vars
 long bomb_startTime = 0; // millis to capture start of bombmode
-const long bomb_durationTime = 10; // time in seconds
+const long bomb_durationTime = 5; // time in seconds TODO make larger
 long bomb_remainingTime;
 
 // ui
@@ -75,6 +75,7 @@ void setup() {
 
   // initialise ble
   BLEDevice::init(playerTag.c_str());
+  
   pServer = BLEDevice::createServer();
   pService = pServer->createService(SERVICE_UUID);
   pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, 
@@ -110,6 +111,7 @@ void loop() {
         Serial.println(inByte, DEC);
         if (inByte == 108) { // 'l'
           state = STATE_CONQUER;
+          playAliveSound();
           Serial.println("revived");
         }
       }
@@ -146,8 +148,9 @@ void loop() {
         drawFightingDisplay(bomb_remainingTime);
         playBombingSound();
       }
-      if (bomb_remainingTime <= 0) {
-        // TODO make exploding sound
+      if (bomb_remainingTime <= 1) {
+        playExplodingSound();
+        // TODO send last beaconsignal
         state = STATE_DYING;
       }
       break;
@@ -175,23 +178,9 @@ void setTeamId() {
 bool checkButtonReleased(int button) {
   int currentValue = digitalRead(buttons[button]);
   if (currentValue == LOW) {
-    /*
-    Serial.print("Button ");
-    Serial.print(button);
-    Serial.print(" on pin  ");
-    Serial.print(buttons[button]);
-    Serial.println(" pressed.");
-    */
     buttonPressed[button] = 1;
   }
   if ((currentValue == HIGH) && (buttonPressed[button] == 1)) {
-    /*
-    Serial.print("Button ");
-    Serial.print(button);
-    Serial.print(" on pin  ");
-    Serial.print(buttons[button]);
-    Serial.println(" released.");
-    */
     buttonPressed[button] = 0;
     return true;
   }
@@ -218,7 +207,6 @@ void drawFightingDisplay(long fight_remainingTime) {
   
 }
 
-// enables players to conquer towers
 void startConquerMode() {
   if ((state != STATE_DEAD) && (state != STATE_FIGHTING)) {
     Serial.println("starting conquering ...");
@@ -228,8 +216,6 @@ void startConquerMode() {
     pAdvertising->stop();
     setBeacon();
     
-    Serial.print("current state conquering: ");
-    Serial.println(state);
     drawBasicDisplay("C");
   }
 }
@@ -253,7 +239,7 @@ void startFightMode() {
     matrix.setPixel( 4, 3, 1 );
     matrix.setPixel( 3, 4, 1 );
 
-    delay(5000); // TODO improve, make blinking stuff
+    delay(1000); // TODO improve, make blinking stuff
     
     // benchmark accelerator
     sensors_event_t event; 
@@ -266,8 +252,6 @@ void startFightMode() {
     fight_startTime = millis();
     fight_remainingTime = fight_maxDurationTime * 1000;
 
-    Serial.print("current state fighting: ");
-    Serial.println(state);
     drawBasicDisplay("F");
   }
 }
@@ -285,8 +269,6 @@ void startBombing() {
     bomb_startTime = millis();
     bomb_remainingTime = bomb_durationTime * 1000;
 
-    Serial.print("current state bombing: ");
-    Serial.println(state);
     drawBasicDisplay("B");
   }
 }
@@ -299,6 +281,8 @@ void startDead() {
     // change ble mode
     pAdvertising->stop();
 
+    playDeadSound();
+    
     // showing dead-mask
     matrix.clear();
     matrix.setPixel( 3, 2, 1 );
@@ -311,14 +295,21 @@ void startDead() {
     matrix.setPixel( 10, 3, 1 );
     matrix.setPixel( 11, 3, 1 );
     matrix.setPixel( 10, 4, 1 );
-  
-    Serial.print("current state dead: ");
-    Serial.println(state);
   }
 }
 
 void playDeadSound() {
-  // TODO make better sound
+  buzzer.setVolume(255);
+  for (uint8_t i = 0; i < 8; i++) {
+    buzzer.setFrequency(200);
+    delay(45);
+    buzzer.setFrequency(150);
+    delay(45);
+  }
+  buzzer.setVolume(0);
+}
+
+void playAliveSound() {
   buzzer.setVolume(255);
   buzzer.setFrequency(600);
   delay(120);
@@ -327,8 +318,54 @@ void playDeadSound() {
   buzzer.setVolume(0);
 }
 
+
+void playExplodingSound() {
+  uint8_t soundDelay = 45;
+  delay(400);
+  buzzer.setVolume(255);
+  for (uint8_t i = 0; i < 2; i++) {
+    buzzer.setFrequency(550); 
+    delay(soundDelay);
+    buzzer.setFrequency(404); 
+    delay(soundDelay);
+    buzzer.setFrequency(315); 
+    delay(soundDelay);
+    buzzer.setFrequency(494); 
+    delay(soundDelay);
+    buzzer.setFrequency(182); 
+    delay(soundDelay);
+    buzzer.setFrequency(260); 
+    delay(soundDelay);
+    buzzer.setFrequency(455); 
+    delay(soundDelay);
+    buzzer.setFrequency(387); 
+    delay(soundDelay);
+    buzzer.setFrequency(340); 
+    delay(soundDelay);
+    buzzer.setFrequency(550); 
+    delay(soundDelay);
+    buzzer.setFrequency(404); 
+    delay(soundDelay);
+    buzzer.setFrequency(315); 
+    delay(soundDelay);
+    buzzer.setFrequency(494); 
+    delay(soundDelay);
+    buzzer.setFrequency(182); 
+    delay(soundDelay);
+    buzzer.setFrequency(260); 
+    delay(soundDelay);
+    buzzer.setFrequency(455); 
+    delay(soundDelay);
+    buzzer.setFrequency(387); 
+    delay(soundDelay);
+    buzzer.setFrequency(340); 
+    delay(soundDelay);
+  }
+  buzzer.setVolume(0);
+}
+
 void playBombingSound() {
-  buzzer.setVolume( 255 );
+  buzzer.setVolume(255);
   for (int i = 1000; i >= 200; i = i- 50) {
     buzzer.setFrequency(i);
     delay(45);
