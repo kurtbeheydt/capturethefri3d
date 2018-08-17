@@ -40,12 +40,55 @@ foreach ($data->scores as $team=>$score) {
 
     <title>Capture The Fri3d</title>
     <style>
-    h1 {
-      text-align: center;
-    }
-    h2 {
-      margin-top: 20px;
-    }
+      body {
+        background: url('bg_forest.jpg');
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      h2 {
+        margin-top: 20px;
+        text-align: center;
+        margin: 20px auto 10px auto;
+        -webkit-text-stroke: 1px white;
+        color: black;
+        text-shadow: -1px -1px 0 #ffffff,
+        1px -1px 0 #ffffff,
+        -1px 1px 0 #ffffff,
+        1px 1px 0 #ffffff;
+      }
+
+      .tower {
+        border: 2px solid #222222;
+      }
+
+      .tower h3 {
+        margin: 10px auto;
+      }
+
+      .teamName {
+        text-align: center;
+        margin: 5px auto 0px;
+        text-shadow: -1px -1px 0 #111111,
+        1px -1px 0 #111111,
+        -1px 1px 0 #111111,
+        1px 1px 0 #111111;
+      }
+
+      .leadingTitle {
+        font-size: smaller;
+        text-align: center;
+        margin-top: 4px;
+      }
+
+      .leadingTeam {
+        font-weight: bold;
+        position: relative;
+        top: -5px;
+        font-size: larger;
+      }
     </style>
   </head>
 
@@ -59,7 +102,7 @@ foreach ($data->scores as $team=>$score) {
             <?php foreach ($data->scores as $team=>$score): ?>
             <div class="row">
               <div class="col">
-                <div class="teamName">team
+                <div class="teamName" style="color: <?php echo teamToColor($team); ?>">team
                   <?php echo $team; ?>
                 </div>
                 <div>
@@ -81,21 +124,32 @@ foreach ($data->scores as $team=>$score) {
           <h2>Torens</h2>
           <div class="row">
             <?php foreach ($data->towers as $tower=>$towerData): ?>
-            <div class="col-md" style="margin: 5px; text-align: center; background-color: <?php echo teamToColor($towerData->currentLeadingTeam); ?>">
-              <h3>
-                <?php echo $towerData->name; ?>
-              </h3>
-              <div>
-                <strong>leider</strong>:
-                <?php echo $towerData->currentLeadingTeam; ?>
+            <div class="col tower" style="margin: 5px; text-align: center; background-color: #ffffff;">
+              <div class="row" style="background-color: <?php echo teamToColor($towerData->currentLeadingTeam); ?>">
+                <div class="col">
+                  <h3>
+                    <?php echo $towerData->name; ?>
+                  </h3>
+                  <div class="leadingTitle">leider</div>
+                  <div class="leadingTeam">
+                    <?php echo $towerData->currentLeadingTeam; ?>
+                  </div>
+                </div>
+              </div>
+              <div class="row" style="margin-top: 10px;">
+                <div class="col">
+                  <div class="leadingTitle">bezetting</div>
+                </div>
               </div>
               <div class="row">
                 <?php foreach ($towerData->teamData as $team=>$teamData): ?>
-                <div class="col-md" style="text-align: center; background-color: <?php echo teamToColor($teamData->teamId); ?>">
+                <div class="col" style="text-align: center; background-color: <?php echo teamToColor($teamData->teamId); ?>">
                   <div style="text-align: center;">
-                    <?php echo $teamData->teamId; ?>
+                    <?php echo substr($teamData->teamId, 0, 1); ?>
                     <br />
-                    <?php echo $teamData->teamCount; ?>
+                    <strong>
+                      <?php echo $teamData->teamCount; ?>
+                    </strong>
                   </div>
                 </div>
                 <?php endforeach; ?>
