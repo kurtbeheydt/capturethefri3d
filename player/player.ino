@@ -228,7 +228,7 @@ bool checkButtonReleased(int button) {
   return false;
 }
 
-void drawBasicDisplay(String gameMode = "C") {
+void drawBasicDisplay(String gameMode = "V") {
   matrix.clear();
   matrix.drawString(2, teamTag);
   matrix.drawString(9, gameMode);
@@ -270,7 +270,7 @@ void startConquerMode() {
 
     buzzer.setVolume(0);
     
-    drawBasicDisplay("C");
+    drawBasicDisplay("V");
   }
 }
 
