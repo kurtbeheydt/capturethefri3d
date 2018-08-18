@@ -7,9 +7,9 @@
 #include <string>
 #include <Fri3dMatrix.h>
 #include <Fri3dAccelerometer.h>
-#include <Fri3dBuzzer.h>
+#include <Fri3dBuzzer.h> 
 
-const String teamTag = "R"; // choose from R|G|B
+const String teamTag = "G"; // choose from R|G|B
 uint16_t teamId;
 uint64_t playerId;
 String playerTag;
@@ -41,9 +41,10 @@ float fight_maxDeviation = 2.00;
 // bombingmode vars
 long bomb_startTime = 0; // millis to capture start of bombmode
 // TODO make bomb_durationTime longer
-const uint8_t bomb_durationTime = 10; // count-down time
+const uint8_t bomb_durationTime = 15; // count-down time
 const uint8_t bomb_explodingTime = 5; // time of explosion and sending exploding beacon
 long bomb_remainingTime;
+const int badgeStateBleRssithreshold = 70;
 
 // conquerer vars
 long conq_lastScanTime = 0; // millis to capture start of conquerermode
@@ -81,11 +82,13 @@ class bombingCallbacks: public BLEAdvertisedDeviceCallbacks {
       Serial.print(" and state ");
       Serial.print(badgeState, DEC);
       Serial.print(" and rssi ");
-      Serial.println(badgeStateBleRssi, DEC); 
-      if (badgeState == STATE_BOMBING) { // in bombing mode
-        state = STATE_UNDERBOMBING;
-      } else if (badgeState == STATE_EXPLODING) { // in exploding mode
-        state = STATE_EXPLODING;
+      Serial.println(badgeStateBleRssi, DEC);
+      if (badgeStateBleRssi < badgeStateBleRssithreshold) {
+        if (badgeState == STATE_BOMBING) { // in bombing mode
+          state = STATE_UNDERBOMBING;
+        } else if (badgeState == STATE_EXPLODING) { // in exploding mode
+          state = STATE_EXPLODING;
+        }
       }
     }
   }
@@ -295,7 +298,16 @@ void startFightMode() {
     matrix.setPixel( 4, 3, 1 );
     matrix.setPixel( 3, 4, 1 );
 
-    delay(1000); // TODO improve, make blinking stuff
+    matrix.setPixel( 10, 0, 1 );
+    matrix.setPixel( 9, 1, 1 );
+    matrix.setPixel( 11, 1, 1 );
+    matrix.setPixel( 8, 2, 1 );
+    matrix.setPixel( 12, 2, 1 );
+    matrix.setPixel( 9, 3, 1 );
+    matrix.setPixel( 11, 3, 1 );
+    matrix.setPixel( 10, 4, 1 );
+
+    delay(1000);
     
     // benchmark accelerator
     sensors_event_t event; 
