@@ -89,6 +89,17 @@ foreach ($data->scores as $team=>$score) {
         top: -5px;
         font-size: larger;
       }
+
+      .teamScore {
+        font-weight: bold;
+      }
+
+      #newTowers {
+        background-color: #ffffff;
+        coilor: #222222;
+        font-size: larger;
+        text-align: center;
+      }
     </style>
   </head>
 
@@ -107,7 +118,7 @@ foreach ($data->scores as $team=>$score) {
                 </div>
                 <div>
                   <div class="progress" style="height: 30px; background-color: #ffffff; font-size: 1em; font-weight: strong;">
-                    <div style="color: #111111; background-color: <?php echo teamToColor($team); ?>; width: <?php echo (100*$score/$totalscore); ?>%;"
+                    <div id="score<?php echo $team; ?>" style="color: #111111; background-color: <?php echo teamToColor($team); ?>; width: <?php echo (100*$score/$totalscore); ?>%;"
                       class="progress-bar" role="progressbar" aria-valuenow="<?php echo $score; ?>" aria-valuemin="0" aria-valuemax="<?php echo $totalscore; ?>">
                       <?php echo $score; ?>
                     </div>
@@ -122,9 +133,10 @@ foreach ($data->scores as $team=>$score) {
       <div class="row">
         <div class="col">
           <h2>Torens</h2>
-          <div class="row">
+          <div id="newTowers"></div>
+          <div id="towers" class="row">
             <?php foreach ($data->towers as $tower=>$towerData): ?>
-            <div class="col tower" style="margin: 5px; text-align: center; background-color: #ffffff;">
+            <div id="tower_<?php echo $tower; ?>" class="col tower" style="margin: 5px; text-align: center; background-color: #ffffff;">
               <div class="row" style="background-color: <?php echo teamToColor($towerData->currentLeadingTeam); ?>">
                 <div class="col">
                   <h3>
@@ -144,31 +156,69 @@ foreach ($data->scores as $team=>$score) {
               <div class="row">
                 <?php foreach ($towerData->teamData as $team=>$teamData): ?>
                 <div class="col" style="text-align: center; background-color: <?php echo teamToColor($teamData->teamId); ?>">
-                  <div style="text-align: center;">
-                    <?php echo substr($teamData->teamId, 0, 1); ?>
-                    <br />
-                    <strong>
-                      <?php echo $teamData->teamCount; ?>
-                    </strong>
+                  <div class="teamDetails <?php echo $team; ?>" style="text-align: center;">
+                    <div class="teamId"><?php echo substr($teamData->teamId, 0, 1); ?></div>
+                    <div class="teamScore"><?php echo $teamData->teamCount; ?></div>
                   </div>
                 </div>
                 <?php endforeach; ?>
               </div>
             </div>
             <?php endforeach; ?>
-
           </div>
         </div>
       </div>
     </div>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-      crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
       crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
       crossorigin="anonymous"></script>
+    <script>
+      var teamToColor = function (team) {
+        color = '#ffffff';
+        switch (team) {
+          case 'rood':
+            color = '#ffc9c9';
+            break;
+          case 'groen':
+            color = '#cdfecd';
+            break;
+          case 'blauw':
+            color = '#c8c8fc';
+            break;
+        }
+        return color;
+      };
+
+      $(document).ready(function () {
+        console.log('ready');
+        myVar = setInterval(function () {
+          var d = new Date();
+          $.get("data.json?v=" + d.getTime(), function (data) {
+            console.log(data);
+            $.each(data.scores, function (team, score) {
+              $('#score' + team).html(score);
+            });
+            $.each(data.towers, function (tower, towerdata) {
+              console.log(tower);
+              console.log($('#tower_' + tower).length);
+              if ($('#tower_' + tower).length) {
+                $('#tower_' + tower + ' > .row:first-child').css({'background-color': teamToColor(towerdata.currentLeadingTeam)});
+                $('#tower_' + tower + ' .leadingTeam').html(towerdata.currentLeadingTeam);
+                $.each(towerdata.teamData, function (teamId, teamData) {
+                  $('#tower_' + tower + ' .teamDetails.' + teamId + ' .teamScore').html(teamData.teamCount);
+                });
+              } else {
+                $('#newTowers').html('Herlaad deze pagina om een nieuwe toren te zien.');
+              }
+            })
+          });
+        }, 2000);
+      });
+    </script>
   </body>
 
   </html>
