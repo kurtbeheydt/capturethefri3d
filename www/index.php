@@ -118,7 +118,7 @@ foreach ($data->scores as $team=>$score) {
                 </div>
                 <div>
                   <div class="progress" style="height: 30px; background-color: #ffffff; font-size: 1em; font-weight: strong;">
-                    <div id="score<?php echo $team; ?>" style="color: #111111; background-color: <?php echo teamToColor($team); ?>; width: <?php echo (100*$score/$totalscore); ?>%;"
+                    <div id="score_<?php echo $team; ?>" style="color: #111111; background-color: <?php echo teamToColor($team); ?>; width: <?php echo (100*$score/$totalscore); ?>%;"
                       class="progress-bar" role="progressbar" aria-valuenow="<?php echo $score; ?>" aria-valuemin="0" aria-valuemax="<?php echo $totalscore; ?>">
                       <?php echo $score; ?>
                     </div>
@@ -194,17 +194,21 @@ foreach ($data->scores as $team=>$score) {
       };
 
       $(document).ready(function () {
-        console.log('ready');
         myVar = setInterval(function () {
           var d = new Date();
           $.get("data.json?v=" + d.getTime(), function (data) {
-            console.log(data);
+            var totalScore = 0;
             $.each(data.scores, function (team, score) {
-              $('#score' + team).html(score);
+              totalScore = totalScore + score;
+            });
+
+            $.each(data.scores, function (team, score) {
+              $('#score_' + team).html(score);
+              $('#score_' + team).css({'width': (100 * score / totalScore) + '%'});
+              $('#score_' + team).attr('aria-valuenow', score);
+              $('#score_' + team).attr('aria-valuemax', totalScore);
             });
             $.each(data.towers, function (tower, towerdata) {
-              console.log(tower);
-              console.log($('#tower_' + tower).length);
               if ($('#tower_' + tower).length) {
                 $('#tower_' + tower + ' > .row:first-child').css({'background-color': teamToColor(towerdata.currentLeadingTeam)});
                 $('#tower_' + tower + ' .leadingTeam').html(towerdata.currentLeadingTeam);
