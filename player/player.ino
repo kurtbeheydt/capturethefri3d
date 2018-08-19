@@ -9,7 +9,7 @@
 #include <Fri3dAccelerometer.h>
 #include <Fri3dBuzzer.h> 
 
-const String teamTag = "G"; // choose from R|G|B
+const String teamTag = "R"; // choose from R|G|B
 uint16_t teamId;
 uint64_t playerId;
 String playerTag;
@@ -29,14 +29,14 @@ BLEAdvertising *pAdvertising;
 
 enum State { STATE_CONQUER, STATE_CONQUERING, STATE_BOMB, STATE_BOMBING, STATE_UNDERBOMBING, 
              STATE_EXPLODING, STATE_FIGHT, STATE_FIGHTING, STATE_DYING, STATE_DEAD };
-State state = STATE_CONQUER;
+State state = STATE_DYING;
 
 // fightmode vars
 long fight_startTime = 0; // millis to capture start of fightmode
 const long fight_maxDurationTime = 15; // time in seconds
 long fight_remainingTime;
 float fight_startAccel[3];
-float fight_maxDeviation = 2.00;
+float fight_maxDeviation = 4.00;
 
 // bombingmode vars
 long bomb_startTime = 0; // millis to capture start of bombmode
@@ -144,7 +144,7 @@ void loop() {
       // revive method
       if (Serial.available() > 0) {   
         int inByte = Serial.read();
-        Serial.println(inByte, DEC);
+        //Serial.println(inByte, DEC);
         if (inByte == 108) { // 'l'
           state = STATE_CONQUER;
           playAliveSound();
