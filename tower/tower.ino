@@ -223,6 +223,6 @@ void loop() {
   // send data to backend
   postScore();
   
-  delay(5000); // TODO increase delay after testing
+  delay(15000);
 }
 
