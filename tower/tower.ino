@@ -22,6 +22,7 @@ uint8_t scanData[4][2] = {{0,0},{0,0},{0,0}};
 uint8_t winningTeamData[3] = {0,0,0};
 
 int scanTime = 5; // Seconds
+const int badgeBleRssithreshold = 80; // limit the range of the ble beacon
 
 void resetScanData() {
   for (int i = 1; i <= teamCount; i++) {
@@ -149,9 +150,11 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       Serial.print(state, DEC);
       Serial.print(" and rssi ");
       Serial.println(bleRssi, DEC);
-      if (state == 1) { // only players in conquer mode
-        scanData[teamId][0] = scanData[teamId][0] + 1; // add a teammember
-        scanData[teamId][1] = scanData[teamId][1] + bleRssi; // add to total rssi
+      if (bleRssi < badgeBleRssithreshold) {
+        if (state == 1) { // only players in conquer mode
+          scanData[teamId][0] = scanData[teamId][0] + 1; // add a teammember
+          scanData[teamId][1] = scanData[teamId][1] + bleRssi; // add to total rssi
+        }
       }
     }
   }
