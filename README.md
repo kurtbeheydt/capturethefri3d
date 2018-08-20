@@ -8,18 +8,20 @@ Libraries needed:
 - [fri3dBadge](https://github.com/Fri3dCamp/Fri3dBadge) 
 - [ESP32 BLE Arduino](https://github.com/nkolban/ESP32_BLE_Arduino) (use them to replace the default ESP32 BLE library) 
 
+the real-time scorebord was visible at [ctfried.postduif.be](http://ctfried.postduif.be)
+
 ## gameplay and rules
 
 As a team you have to conquer as many towers for as long as possible. Every tower in your team's control scores a point every 20 seconds. The towers scan for players and is controlled by the team which has the most players (with the lowest RSSI) ever 20 seconds.
 
-- The players are divided in three teams: Red, Green and Blue. Perhaps they can visualise themselves by wearing some coloured clothining or blinking leds ;)
-- there are a number of towers, also fri3d camp badges, but flashed with the tower badge sketch. The more, the better I think. They are distributed over the playing field.
-- By default, a player starts dead when the switch their badge on. You can give them a live by writing an 'l' via the serial port (9600 baud). _Perhaps this will change to another procedure_
+- The players are divided in three teams: Red, Green and Blue.
+- there are a number of towers, also fri3d camp badges, but flashed with the tower badge sketch. We played it with five towers.
+- By default, a player starts dead when the switch their badge on. You can give them a live by writing an 'l' via the serial port (9600 baud). _suggestion after the time we played to replace this with another beacon that revives the players automatically when they reach their base camp_
 - When a player is revived, he or she starts in conquer mode. This means he or she can search for towers and when he is in bluetooth range while the tower is scanning, his badge is counted.
 
 ### fight mode
 
-A player can challenge another player for a stand-off. If he can tag the other player, both players push button 0, keeping it pushed and release it at the same time. A countdown starts during which they can't move. If they do, the dying sound plays. The first playing having his badge play the dying sound, looses and has to switch his badge off.
+A player can challenge another player for a stand-off. If he can tag the other player, both players push button 0, keeping it pushed and release it at the same time. A countdown starts during which they can't move. If they do, the dying sound plays. The first playing having his badge play the dying sound, looses and has to switch his badge off, making him dead so he has to return to his basecamp.
 
 ### bombing mode
 
@@ -79,4 +81,4 @@ basic php-script for front-end and back-end.
 
 ## dummy players
 
-Just for testing purposes, ightweight variants to create dummy conquerers/bombers for ESP-WROOM-32 dev boards.
+Just for testing purposes, lightweight variants to create dummy conquerers/bombers for ESP-WROOM-32 dev boards.
