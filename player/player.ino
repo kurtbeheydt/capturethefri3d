@@ -44,7 +44,7 @@ long bomb_startTime = 0; // millis to capture start of bombmode
 const uint8_t bomb_durationTime = 15; // count-down time
 const uint8_t bomb_explodingTime = 5; // time of explosion and sending exploding beacon
 long bomb_remainingTime;
-const int badgeStateBleRssithreshold = 70;
+const int badgeStateBleRssithreshold = 70; // limit the range of the explosion radius
 
 // conquerer vars
 long conq_lastScanTime = 0; // millis to capture start of conquerermode
